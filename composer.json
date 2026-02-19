@@ -1,0 +1,94 @@
+{
+    "name": "chamber-orchestra/menu-bundle",
+    "type": "symfony-bundle",
+    "description": "Symfony 8 bundle for building navigation menus — fluent tree builder, route-based active matching, role-based access control, PSR-6 tag-aware caching, and Twig rendering",
+    "keywords": [
+        "symfony",
+        "symfony-bundle",
+        "symfony8",
+        "php8",
+        "menu",
+        "menu-bundle",
+        "menu-builder",
+        "navigation",
+        "navigation-bundle",
+        "navigation-menu",
+        "navbar",
+        "sidebar",
+        "tree-menu",
+        "menu-item",
+        "active-menu",
+        "twig",
+        "voter",
+        "caching",
+        "role-based-access",
+        "access-control",
+        "authorization",
+        "php"
+    ],
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Andrew Lukin",
+            "email": "lukin.andrej@gmail.com",
+            "homepage": "https://github.com/wtorsi",
+            "role": "Developer"
+        },
+        {
+            "name": "Girchenko Mikhail",
+            "email": "girchenkomikhail@gmail.com",
+            "homepage": "https://github.com/baldrys-ed",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/chamber-orchestra/menu-bundle",
+    "support": {
+        "issues": "https://github.com/chamber-orchestra/menu-bundle/issues",
+        "source": "https://github.com/chamber-orchestra/menu-bundle"
+    },
+    "require": {
+        "php": "^8.5",
+        "ext-ds": "*",
+        "doctrine/collections": "^2.0 || ^3.0",
+        "symfony/cache-contracts": "^3.4",
+        "symfony/dependency-injection": "^8.0",
+        "symfony/http-foundation": "^8.0",
+        "symfony/http-kernel": "^8.0",
+        "symfony/routing": "^8.0",
+        "symfony/security-core": "^8.0",
+        "symfony/translation-contracts": "^3.4",
+        "twig/twig": "^3.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "phpunit/phpunit": "^13.0",
+        "symfony/cache": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ChamberOrchestra\\MenuBundle\\": ""
+        },
+        "exclude-from-classmap": [
+            "/tests/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "symfony": {
+            "require": "^8.0"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "cs-fix": "vendor/bin/php-cs-fixer fix",
+        "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff"
+    }
+}
