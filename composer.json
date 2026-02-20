@@ -26,7 +26,7 @@
         "authorization",
         "php"
     ],
-    "license": "Apache-2.0",
+    "license": "MIT",
     "authors": [
         {
             "name": "Andrew Lukin",
@@ -51,6 +51,7 @@
         "ext-ds": "*",
         "doctrine/collections": "^2.0 || ^3.0",
         "symfony/cache-contracts": "^3.4",
+        "symfony/config": "^8.0",
         "symfony/dependency-injection": "^8.0",
         "symfony/http-foundation": "^8.0",
         "symfony/http-kernel": "^8.0",
@@ -61,16 +62,14 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^13.0",
         "symfony/cache": "^8.0"
     },
     "autoload": {
         "psr-4": {
-            "ChamberOrchestra\\MenuBundle\\": ""
-        },
-        "exclude-from-classmap": [
-            "/tests/"
-        ]
+            "ChamberOrchestra\\MenuBundle\\": "src/"
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -78,6 +77,7 @@
         }
     },
     "minimum-stability": "dev",
+    "prefer-stable": true,
     "config": {
         "sort-packages": true
     },
@@ -88,6 +88,7 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
+        "analyse": "vendor/bin/phpstan analyse",
         "cs-fix": "vendor/bin/php-cs-fixer fix",
         "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff"
     }

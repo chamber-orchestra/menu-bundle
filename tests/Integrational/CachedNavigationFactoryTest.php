@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Tests\Integrational;
 
 use ChamberOrchestra\MenuBundle\Factory\Factory;
-use ChamberOrchestra\MenuBundle\Menu\MenuBuilderInterface;
+use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
 use ChamberOrchestra\MenuBundle\Navigation\AbstractCachedNavigation;
-use ChamberOrchestra\MenuBundle\Navigation\AbstractNavigation;
 use ChamberOrchestra\MenuBundle\NavigationFactory;
 use ChamberOrchestra\MenuBundle\Registry\NavigationRegistry;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,21 +32,21 @@ final class CachedNavigationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cachedNavigationDedupedWithinSameFactoryInstance(): void
+    public function navigationDedupedWithinSameFactoryInstance(): void
     {
-        $nav = $this->makeCachedNav();
+        $nav = $this->makeNav();
 
-        $factory = $this->makeFactory(null); // no PSR-6 cache
+        $factory = $this->makeFactory();
         $factory->create($nav, []);
         $factory->create($nav, []);
 
-        self::assertSame(1, $nav->buildCount, 'Within-request dedup must work even without PSR-6');
+        self::assertSame(1, $nav->buildCount, 'Within-request dedup must prevent duplicate builds');
     }
 
     #[Test]
-    public function cachedNavigationServedFromPsrCacheOnSubsequentRequests(): void
+    public function navigationServedFromPsrCacheOnSubsequentRequests(): void
     {
-        $nav = $this->makeCachedNav();
+        $nav = $this->makeNav();
 
         // Simulate two separate requests (two factory instances, shared PSR-6 cache)
         $this->makeFactory($this->cache)->create($nav, []);
@@ -57,30 +56,10 @@ final class CachedNavigationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function nonCachedNavigationIsAlwaysRebuilt(): void
-    {
-        $nav = new class extends AbstractNavigation {
-            public int $buildCount = 0;
-
-            public function build(MenuBuilderInterface $builder, array $options = []): void
-            {
-                ++$this->buildCount;
-                $builder->add('item');
-            }
-        };
-
-        $factory = $this->makeFactory($this->cache);
-        $factory->create($nav, []);
-        $factory->create($nav, []);
-
-        self::assertSame(2, $nav->buildCount);
-    }
-
-    #[Test]
     public function psrCachePreservesItemTreeStructure(): void
     {
         $nav = new class extends AbstractCachedNavigation {
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 $builder
                     ->add('parent', ['label' => 'Parent'], section: true)
@@ -103,12 +82,12 @@ final class CachedNavigationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function differentCachedNavigationClassesAreCachedSeparately(): void
+    public function differentNavigationClassesAreCachedSeparately(): void
     {
         $nav1 = new class extends AbstractCachedNavigation {
             public int $buildCount = 0;
 
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 ++$this->buildCount;
                 $builder->add('nav1_item');
@@ -118,7 +97,7 @@ final class CachedNavigationFactoryTest extends TestCase
         $nav2 = new class extends AbstractCachedNavigation {
             public int $buildCount = 0;
 
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 ++$this->buildCount;
                 $builder->add('nav2_item');
@@ -134,23 +113,23 @@ final class CachedNavigationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function navigatingWithoutPsrCacheStillDedupesWithinRequest(): void
+    public function withoutPsrCacheStillDedupesWithinRequest(): void
     {
-        $nav = $this->makeCachedNav();
-        $factoryNocache = $this->makeFactory(null);
+        $nav = $this->makeNav();
+        $factory = $this->makeFactory();
 
-        $root1 = $factoryNocache->create($nav, []);
-        $root2 = $factoryNocache->create($nav, []);
+        $root1 = $factory->create($nav, []);
+        $root2 = $factory->create($nav, []);
 
         self::assertSame($root1, $root2, 'Same item instance returned from in-memory dedup');
     }
 
-    private function makeCachedNav(): AbstractCachedNavigation
+    private function makeNav(): AbstractCachedNavigation
     {
         return new class extends AbstractCachedNavigation {
             public int $buildCount = 0;
 
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 ++$this->buildCount;
                 $builder->add('item', ['label' => 'Item']);
@@ -158,7 +137,7 @@ final class CachedNavigationFactoryTest extends TestCase
         };
     }
 
-    private function makeFactory(?CacheInterface $cache): NavigationFactory
+    private function makeFactory(?CacheInterface $cache = null): NavigationFactory
     {
         return new NavigationFactory($this->registry, $this->factory, $cache);
     }

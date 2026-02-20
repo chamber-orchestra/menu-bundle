@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Navigation;
 
-use ChamberOrchestra\MenuBundle\Menu\MenuBuilderInterface;
+use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
 use ChamberOrchestra\MenuBundle\Navigation\AbstractCachedNavigation;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -21,9 +21,9 @@ final class AbstractCachedNavigationTest extends TestCase
     }
 
     #[Test]
-    public function getCacheBetaReturnsZero(): void
+    public function getCacheBetaReturnsNull(): void
     {
-        self::assertSame(0.0, $this->makeNav()->getCacheBeta());
+        self::assertNull($this->makeNav()->getCacheBeta());
     }
 
     #[Test]
@@ -41,7 +41,7 @@ final class AbstractCachedNavigationTest extends TestCase
     {
         $item = $this->createMock(ItemInterface::class);
         $item->method('expiresAfter');
-        $item->expects(self::once())->method('tag')->with(['navigation']);
+        $item->expects(self::once())->method('tag')->with(['chamber_orchestra_menu']);
 
         $this->makeNav()->configureCacheItem($item);
     }
@@ -84,15 +84,18 @@ final class AbstractCachedNavigationTest extends TestCase
 
         $item = $this->createMock(ItemInterface::class);
         $item->expects(self::once())->method('expiresAfter')->with(7200);
-        $item->expects(self::once())->method('tag')->with(['navigation']); // default tags preserved
+        $item->expects(self::once())->method('tag')->with(['chamber_orchestra_menu']); // default tags preserved
 
         $nav->configureCacheItem($item);
     }
 
+    /**
+     * @param array<string, mixed> $cacheOptions
+     */
     private function makeNav(array $cacheOptions = []): AbstractCachedNavigation
     {
         return new class($cacheOptions) extends AbstractCachedNavigation {
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+            public function build(MenuBuilder $builder, array $options = []): void
             {
             }
         };

@@ -2,7 +2,7 @@
 
 [![PHP](https://img.shields.io/badge/PHP-8.5%2B-8892BF?logo=php)](https://php.net)
 [![Symfony](https://img.shields.io/badge/Symfony-8.0%2B-000000?logo=symfony)](https://symfony.com)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/chamber-orchestra/menu-bundle/actions/workflows/php.yml/badge.svg)](https://github.com/chamber-orchestra/menu-bundle/actions/workflows/php.yml)
 
 A **Symfony 8** bundle for building navigation menus and sidebars — fluent tree builder, route-based active-item matching, role-based access control, PSR-6 tag-aware caching, and Twig rendering.
@@ -14,7 +14,8 @@ A **Symfony 8** bundle for building navigation menus and sidebars — fluent tre
 - **Fluent builder API** — `add()`, `children()`, `end()` for deeply-nested trees
 - **Route-based matching** — `RouteVoter` marks the current item and its ancestors active; route values are treated as regex patterns
 - **Role-based access** — `Accessor` gates items by Symfony security roles; results are memoized per request
-- **PSR-6 caching** — `AbstractCachedNavigation` caches the item tree for 24 h with tag-based invalidation
+- **PSR-6 caching** — `AbstractCachedNavigation` caches the item tree for 24 h with tag-based invalidation; `AbstractStaticNavigation` rebuilds every request for dynamic content
+- **Badge support** — attach dynamic counts to items via `int` or `\Closure`; closures are resolved at build time
 - **Twig integration** — `render_menu()` function with fully customisable templates
 - **Extension system** — plug in custom `ExtensionInterface` to enrich item options before creation
 - **DI autoconfiguration** — implement an interface, done; no manual service tags required
@@ -60,12 +61,12 @@ return [
 
 namespace App\Navigation;
 
-use ChamberOrchestra\MenuBundle\Menu\MenuBuilderInterface;
-use ChamberOrchestra\MenuBundle\Navigation\AbstractNavigation;
+use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
+use ChamberOrchestra\MenuBundle\Navigation\AbstractCachedNavigation;
 
-final class SidebarNavigation extends AbstractNavigation
+final class SidebarNavigation extends AbstractCachedNavigation
 {
-    public function build(MenuBuilderInterface $builder, array $options = []): void
+    public function build(MenuBuilder $builder, array $options = []): void
     {
         $builder
             ->add('dashboard', ['label' => 'Dashboard', 'route' => 'app_dashboard'])
@@ -118,6 +119,7 @@ Options are passed as the second argument to `MenuBuilder::add()`:
 | `routes` | `array` | — | Additional routes that activate this item (supports regex) |
 | `uri` | `string` | — | Raw URI; set directly if not using `route` |
 | `roles` | `array` | — | Security roles **all** required to display the item (AND logic) |
+| `badge` | `int\|\Closure` | `BadgeExtension` | Badge count; closures are resolved at build time; stored in `extras['badge']` |
 | `attributes` | `array` | `CoreExtension` | HTML attributes merged onto the rendered element |
 | `extras` | `array` | `CoreExtension` | Arbitrary extra data attached to the item |
 
@@ -137,14 +139,27 @@ $builder
 
 ## Caching
 
-Extend `AbstractCachedNavigation` to cache the built tree between requests:
+Navigation classes form a hierarchy — extend the one that fits your use case:
+
+```
+AbstractNavigation                     (base: 0 TTL, no tags)
+├── AbstractCachedNavigation           (24 h TTL, 'chamber_orchestra_menu' tag)
+└── AbstractStaticNavigation           (0 TTL, no tags — explicit non-cached)
+```
+
+| Base class | TTL | Tags | Use case |
+|---|---|---|---|
+| `AbstractCachedNavigation` | 24 h | `chamber_orchestra_menu` | Static menu structures |
+| `AbstractStaticNavigation` | 0 | none | Menus with dynamic data (badges, counters) |
+
+Both are deduped within the same request via `NavigationFactory`. When a PSR-6 `CacheInterface` (tag-aware) is wired in, `AbstractCachedNavigation` stores the tree across requests. Without one, an in-memory `ArrayAdapter` is used automatically.
 
 ```php
 <?php
 
 namespace App\Navigation;
 
-use ChamberOrchestra\MenuBundle\Menu\MenuBuilderInterface;
+use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
 use ChamberOrchestra\MenuBundle\Navigation\AbstractCachedNavigation;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -168,16 +183,14 @@ final class MainNavigation extends AbstractCachedNavigation
         $item->tag(['navigation', 'main_nav']);
     }
 
-    public function build(MenuBuilderInterface $builder, array $options = []): void
+    public function build(MenuBuilder $builder, array $options = []): void
     {
         $builder->add('home', ['label' => 'Home', 'route' => 'app_home']);
     }
 }
 ```
 
-The default cache key is the fully-qualified class name; default TTL is **24 hours**; default tag is `navigation`.
-
-A PSR-6 `CacheInterface` (tag-aware) must be wired into `NavigationFactory`. Configure it in your service definition or use Symfony's `cache.app` taggable pool.
+The default cache key is the fully-qualified class name; default TTL is **24 hours**; default tag is `chamber_orchestra_menu`.
 
 ---
 
@@ -193,22 +206,6 @@ $builder->add('blog', [
         ['route' => 'app_blog_.*'], // all blog_* routes keep the item active
     ],
 ]);
-```
-
-Custom voters implement `VoterInterface` and are auto-tagged:
-
-```php
-use ChamberOrchestra\MenuBundle\Matcher\Voter\VoterInterface;
-use ChamberOrchestra\MenuBundle\Menu\ItemInterface;
-
-final class MyVoter implements VoterInterface
-{
-    public function matchItem(ItemInterface $item): ?bool
-    {
-        // return true (current), false (not current), null (abstain)
-        return null;
-    }
-}
 ```
 
 ---
@@ -228,6 +225,47 @@ The `accessor` variable is injected into every rendered template. Call `hasAcces
 - the current user has **all** of the required roles (AND logic).
 
 `hasAccessToChildren(collection)` returns `true` when **any** child in the collection is accessible.
+
+---
+
+## Badges
+
+The `badge` option attaches a numeric count to a menu item. Pass an `int` directly, or a `\Closure` that returns one — closures are resolved at build time by `BadgeExtension`. Use `AbstractStaticNavigation` when badges need fresh data on every request:
+
+```php
+<?php
+
+namespace App\Navigation;
+
+use App\Repository\MessageRepository;
+use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
+use ChamberOrchestra\MenuBundle\Navigation\AbstractStaticNavigation;
+
+final class InboxNavigation extends AbstractStaticNavigation
+{
+    public function __construct(private readonly MessageRepository $messages)
+    {
+    }
+
+    public function build(MenuBuilder $builder, array $options = []): void
+    {
+        $builder
+            ->add('inbox', [
+                'label' => 'Inbox',
+                'route' => 'app_inbox',
+                'badge' => fn (): int => $this->messages->countUnread(),
+            ]);
+    }
+}
+```
+
+In Twig, read the badge via `item.badge`:
+
+```twig
+{% if item.badge is not null %}
+    <span class="badge">{{ item.badge }}</span>
+{% endif %}
+```
 
 ---
 
@@ -260,7 +298,6 @@ Implement an interface and you're done — no manual service tags required:
 |---|---|
 | `NavigationInterface` | `chamber_orchestra_menu.navigation` |
 | `ExtensionInterface` | `chamber_orchestra_menu.factory.extension` |
-| `VoterInterface` | `chamber_orchestra_menu.matcher.voter` |
 
 ---
 
@@ -278,9 +315,9 @@ Implement an interface and you're done — no manual service tags required:
 
 | Variable | Type | Description |
 |---|---|---|
-| `root` | `ItemInterface` | Root item — iterate to get top-level items |
-| `matcher` | `MatcherInterface` | Call `isCurrent(item)` / `isAncestor(item)` |
-| `accessor` | `AccessorInterface` | Call `hasAccess(item)` / `hasAccessToChildren(collection)` |
+| `root` | `Item` | Root item — iterate to get top-level items |
+| `matcher` | `Matcher` | Call `isCurrent(item)` / `isAncestor(item)` |
+| `accessor` | `Accessor` | Call `hasAccess(item)` / `hasAccessToChildren(collection)` |
 
 ---
 
@@ -295,4 +332,4 @@ composer test
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Navigation;
 
-use ChamberOrchestra\MenuBundle\Menu\MenuBuilderInterface;
+use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
 use ChamberOrchestra\MenuBundle\Navigation\ClosureNavigation;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -19,14 +19,14 @@ final class ClosureNavigationTest extends TestCase
         $receivedOptions = null;
 
         $nav = new ClosureNavigation(
-            function (MenuBuilderInterface $builder, array $options) use (&$called, &$receivedBuilder, &$receivedOptions): void {
+            function (MenuBuilder $builder, array $options) use (&$called, &$receivedBuilder, &$receivedOptions): void {
                 $called = true;
                 $receivedBuilder = $builder;
                 $receivedOptions = $options;
             }
         );
 
-        $builder = $this->createStub(MenuBuilderInterface::class);
+        $builder = $this->createStub(MenuBuilder::class);
         $nav->build($builder, ['locale' => 'ru']);
 
         self::assertTrue($called);
@@ -39,12 +39,12 @@ final class ClosureNavigationTest extends TestCase
     {
         $received = null;
         $nav = new ClosureNavigation(
-            function (MenuBuilderInterface $b, array $options) use (&$received): void {
+            function (MenuBuilder $b, array $options) use (&$received): void {
                 $received = $options;
             }
         );
 
-        $nav->build($this->createStub(MenuBuilderInterface::class));
+        $nav->build($this->createStub(MenuBuilder::class));
 
         self::assertSame([], $received);
     }
