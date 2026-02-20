@@ -51,9 +51,8 @@ composer run-script cs-check
 ### Navigation Layer (`src/Navigation/`)
 
 - `NavigationInterface` — implement `build()`, `getCacheKey()`, `configureCacheItem()`, `getCacheBeta()` to populate the builder and control caching
-- `AbstractNavigation` — minimal base class with default cache key (FQCN) and 0 TTL; two subclasses provide caching strategies:
-  - `AbstractCachedNavigation` — 24 h TTL, `chamber_orchestra_menu` tag by default; for static menu structures that survive PSR-6 cache
-  - `AbstractStaticNavigation` — 0 TTL, no tags; rebuilds every request (still deduped within same request via `NavigationFactory::$built`); for menus with dynamic data (e.g. badge closures)
+- `AbstractNavigation` — minimal base class with default cache key (FQCN) and 0 TTL
+  - `AbstractCachedNavigation` — 24 h TTL, `chamber_orchestra_menu` tag by default; for menu structures that survive PSR-6 cache
 - `ClosureNavigation` — wraps a closure as a one-off navigation (0 TTL, never cached across requests)
 
 Navigation services are auto-tagged `chamber_orchestra_menu.navigation` and resolved by `NavigationRegistry` (a `ServiceLocator` keyed by class name).
@@ -62,7 +61,7 @@ Navigation services are auto-tagged `chamber_orchestra_menu.navigation` and reso
 
 - `MenuBuilder` — fluent builder: `add(name, options, prepend, section)` → `children()` → `end()` → `build()`
 - `Factory` — creates `Item` instances; applies `ExtensionInterface` plugins sorted by priority
-- `Item` — tree node with: `name`, `label`, `uri`, `roles`, `attributes`, `badge`, children (`Collection`), `isSection()`
+- `Item` — tree node with: `name`, `label`, `uri`, `roles`, `attributes`, `badge`, `setExtra()`, children (`Collection`), `isSection()`
 
 **Item options** passed to `MenuBuilder::add()`:
 
@@ -70,7 +69,7 @@ Navigation services are auto-tagged `chamber_orchestra_menu.navigation` and reso
 |---|---|---|
 | `route`, `route_params`, `route_type` | `RoutingExtension` | Generates `uri`; appends to `routes` array |
 | `routes` | — | Routes that activate the item (supports regex) |
-| `label`, `translation_domain` | `LabelExtension` | Label with optional Symfony translation |
+| `label` | `LabelExtension` | Display text; falls back to item name if absent |
 | `roles` | — | Security roles required to show the item |
 | `badge` | `BadgeExtension` | Badge count (`int` or `\Closure`); resolved and stored in `extras['badge']` |
 | `attributes` | `CoreExtension` | HTML attributes |
@@ -99,9 +98,12 @@ The built-in `RouteVoter` handles route-based matching.
 Implementing these interfaces is enough — no manual service config needed:
 
 - `NavigationInterface` → tagged `chamber_orchestra_menu.navigation`
-- `ExtensionInterface` → tagged `chamber_orchestra_menu.factory.extension`
+- `ExtensionInterface` → tagged `chamber_orchestra_menu.factory.extension` (build-time, results cached with tree)
+- `RuntimeExtensionInterface` → tagged `chamber_orchestra_menu.factory.runtime_extension` (post-cache, runs every request)
 
 `CoreExtension` is registered with priority `-10` (runs last, sets defaults).
+
+**Extension split:** `ExtensionInterface` runs during build and results are cached with the Item tree. `RuntimeExtensionInterface::processItem(Item)` runs after every cache fetch, walking the entire tree — use it for dynamic data like badge counts that must be fresh every request.
 
 ### Service Configuration
 
@@ -121,7 +123,7 @@ Services are autowired and autoconfigured via `src/Resources/config/services.php
 
 ## Dependencies
 
-- Requires PHP 8.5, `ext-ds`, Symfony 8.0 components (`config`, `dependency-injection`, `http-foundation`, `http-kernel`, `routing`, `security-core`), Symfony contracts (`cache-contracts`, `translation-contracts`), `doctrine/collections`, `twig/twig`
+- Requires PHP 8.5, `ext-ds`, Symfony 8.0 components (`config`, `dependency-injection`, `http-foundation`, `http-kernel`, `routing`, `security-core`), `symfony/cache-contracts`, `doctrine/collections`, `twig/twig`
 - Dev: PHPUnit 13, PHPStan, `php-cs-fixer`, `symfony/cache`
 - Main branch is `main`
 

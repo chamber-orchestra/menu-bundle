@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\MenuBundle\Factory\Extension;
 
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
+
+#[AutoconfigureTag('chamber_orchestra_menu.factory.extension', ['priority' => -10])]
 class CoreExtension implements ExtensionInterface
 {
     /**

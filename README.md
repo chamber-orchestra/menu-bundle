@@ -1,11 +1,14 @@
 # ChamberOrchestra MenuBundle
 
-[![PHP](https://img.shields.io/badge/PHP-8.5%2B-8892BF?logo=php)](https://php.net)
-[![Symfony](https://img.shields.io/badge/Symfony-8.0%2B-000000?logo=symfony)](https://symfony.com)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/chamber-orchestra/menu-bundle/actions/workflows/php.yml/badge.svg)](https://github.com/chamber-orchestra/menu-bundle/actions/workflows/php.yml)
+[![PHP Composer](https://github.com/chamber-orchestra/menu-bundle/actions/workflows/php.yml/badge.svg)](https://github.com/chamber-orchestra/menu-bundle/actions/workflows/php.yml)
+[![PHPStan](https://img.shields.io/badge/PHPStan-max-brightgreen.svg)](https://phpstan.org/)
+[![PHP-CS-Fixer](https://img.shields.io/badge/code%20style-PER--CS%20%2F%20Symfony-blue.svg)](https://cs.symfony.com/)
+[![Latest Stable Version](https://img.shields.io/packagist/v/chamber-orchestra/menu-bundle.svg)](https://packagist.org/packages/chamber-orchestra/menu-bundle)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![PHP 8.5+](https://img.shields.io/badge/PHP-8.5%2B-777BB4.svg)](https://www.php.net/)
+[![Symfony 8.0](https://img.shields.io/badge/Symfony-8.0-000000.svg)](https://symfony.com/)
 
-A **Symfony 8** bundle for building navigation menus and sidebars — fluent tree builder, route-based active-item matching, role-based access control, PSR-6 tag-aware caching, and Twig rendering.
+A **Symfony 8** bundle for building navigation menus, sidebars, and breadcrumbs — fluent tree builder, route-based active-item matching, role-based access control, runtime extensions for dynamic badges, PSR-6 tag-aware caching, and Twig rendering.
 
 ---
 
@@ -14,10 +17,11 @@ A **Symfony 8** bundle for building navigation menus and sidebars — fluent tre
 - **Fluent builder API** — `add()`, `children()`, `end()` for deeply-nested trees
 - **Route-based matching** — `RouteVoter` marks the current item and its ancestors active; route values are treated as regex patterns
 - **Role-based access** — `Accessor` gates items by Symfony security roles; results are memoized per request
-- **PSR-6 caching** — `AbstractCachedNavigation` caches the item tree for 24 h with tag-based invalidation; `AbstractStaticNavigation` rebuilds every request for dynamic content
-- **Badge support** — attach dynamic counts to items via `int` or `\Closure`; closures are resolved at build time
+- **PSR-6 caching** — `AbstractCachedNavigation` caches the item tree for 24 h with tag-based invalidation
+- **Runtime extensions** — `RuntimeExtensionInterface` runs post-cache on every request for fresh dynamic data without rebuilding the tree
+- **Badge support** — `BadgeExtension` resolves `int` and `\Closure` badges at runtime; implement `RuntimeExtensionInterface` for service-injected dynamic badges
 - **Twig integration** — `render_menu()` function with fully customisable templates
-- **Extension system** — plug in custom `ExtensionInterface` to enrich item options before creation
+- **Extension system** — build-time `ExtensionInterface` for cached option enrichment, runtime `RuntimeExtensionInterface` for post-cache processing
 - **DI autoconfiguration** — implement an interface, done; no manual service tags required
 
 ---
@@ -81,7 +85,7 @@ final class SidebarNavigation extends AbstractCachedNavigation
 }
 ```
 
-The class is auto-tagged as a navigation service — no YAML service definition needed.
+The class is auto-tagged as a navigation service — no YAML/XML service definition needed.
 
 ### 2. Create a Twig template
 
@@ -109,19 +113,18 @@ The class is auto-tagged as a navigation service — no YAML service definition 
 
 Options are passed as the second argument to `MenuBuilder::add()`:
 
-| Option | Type | Extension | Description |
-|---|---|---|---|
-| `label` | `string` | `LabelExtension` | Display text; falls back to item name if absent |
-| `translation_domain` | `string` | `LabelExtension` | Symfony translation domain for the label |
-| `route` | `string` | `RoutingExtension` | Route name; generates `uri` and appends to `routes` |
-| `route_params` | `array` | `RoutingExtension` | Route parameters passed to the URL generator |
-| `route_type` | `int` | `RoutingExtension` | `UrlGeneratorInterface::ABSOLUTE_PATH` (default) or `ABSOLUTE_URL` |
-| `routes` | `array` | — | Additional routes that activate this item (supports regex) |
-| `uri` | `string` | — | Raw URI; set directly if not using `route` |
-| `roles` | `array` | — | Security roles **all** required to display the item (AND logic) |
-| `badge` | `int\|\Closure` | `BadgeExtension` | Badge count; closures are resolved at build time; stored in `extras['badge']` |
-| `attributes` | `array` | `CoreExtension` | HTML attributes merged onto the rendered element |
-| `extras` | `array` | `CoreExtension` | Arbitrary extra data attached to the item |
+| Option | Type | Description |
+|---|---|---|
+| `label` | `string` | Display text; falls back to item name if absent (`LabelExtension`) |
+| `route` | `string` | Route name; generates `uri` and appends to `routes` (`RoutingExtension`) |
+| `route_params` | `array` | Route parameters passed to the URL generator (`RoutingExtension`) |
+| `route_type` | `int` | `UrlGeneratorInterface::ABSOLUTE_PATH` (default) or `ABSOLUTE_URL` (`RoutingExtension`) |
+| `routes` | `array` | Additional routes that activate this item (supports regex) |
+| `uri` | `string` | Raw URI; set directly if not using `route` |
+| `roles` | `array` | Security roles **all** required to display the item (AND logic) |
+| `badge` | `int\|\Closure` | Badge count; resolved post-cache by `BadgeExtension` (a runtime extension); stored in `extras['badge']` |
+| `attributes` | `array` | HTML attributes merged onto the rendered element (`CoreExtension`) |
+| `extras` | `array` | Arbitrary extra data attached to the item (`CoreExtension`) |
 
 ### Section items
 
@@ -143,16 +146,17 @@ Navigation classes form a hierarchy — extend the one that fits your use case:
 
 ```
 AbstractNavigation                     (base: 0 TTL, no tags)
-├── AbstractCachedNavigation           (24 h TTL, 'chamber_orchestra_menu' tag)
-└── AbstractStaticNavigation           (0 TTL, no tags — explicit non-cached)
+└── AbstractCachedNavigation           (24 h TTL, 'chamber_orchestra_menu' tag)
 ```
 
 | Base class | TTL | Tags | Use case |
 |---|---|---|---|
-| `AbstractCachedNavigation` | 24 h | `chamber_orchestra_menu` | Static menu structures |
-| `AbstractStaticNavigation` | 0 | none | Menus with dynamic data (badges, counters) |
+| `AbstractCachedNavigation` | 24 h | `chamber_orchestra_menu` | Menu structures (recommended) |
+| `AbstractNavigation` | 0 | none | Base class, no caching across requests |
 
-Both are deduped within the same request via `NavigationFactory`. When a PSR-6 `CacheInterface` (tag-aware) is wired in, `AbstractCachedNavigation` stores the tree across requests. Without one, an in-memory `ArrayAdapter` is used automatically.
+All navigations are deduped within the same request via `NavigationFactory`. When a PSR-6 `CacheInterface` (tag-aware) is wired in, `AbstractCachedNavigation` stores the tree across requests. Without one, an in-memory `ArrayAdapter` is used automatically.
+
+Dynamic data (badges, counters) does not require sacrificing the cache — use runtime extensions instead.
 
 ```php
 <?php
@@ -230,31 +234,40 @@ The `accessor` variable is injected into every rendered template. Call `hasAcces
 
 ## Badges
 
-The `badge` option attaches a numeric count to a menu item. Pass an `int` directly, or a `\Closure` that returns one — closures are resolved at build time by `BadgeExtension`. Use `AbstractStaticNavigation` when badges need fresh data on every request:
+### Via the `badge` option
+
+The built-in `BadgeExtension` is a runtime extension that resolves the `badge` item option on every request. Pass an `int` or a `\Closure`:
+
+```php
+$builder
+    ->add('news', ['label' => 'News', 'badge' => 3])
+    ->add('inbox', ['label' => 'Inbox', 'badge' => fn (): int => $this->messages->countUnread()]);
+```
+
+### Via a custom runtime extension
+
+For service-injected dynamic data, implement `RuntimeExtensionInterface`. The tree stays cached; the extension runs post-cache on every request:
 
 ```php
 <?php
 
-namespace App\Navigation;
+namespace App\Navigation\Extension;
 
 use App\Repository\MessageRepository;
-use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
-use ChamberOrchestra\MenuBundle\Navigation\AbstractStaticNavigation;
+use ChamberOrchestra\MenuBundle\Factory\Extension\RuntimeExtensionInterface;
+use ChamberOrchestra\MenuBundle\Menu\Item;
 
-final class InboxNavigation extends AbstractStaticNavigation
+final class InboxBadgeExtension implements RuntimeExtensionInterface
 {
     public function __construct(private readonly MessageRepository $messages)
     {
     }
 
-    public function build(MenuBuilder $builder, array $options = []): void
+    public function processItem(Item $item): void
     {
-        $builder
-            ->add('inbox', [
-                'label' => 'Inbox',
-                'route' => 'app_inbox',
-                'badge' => fn (): int => $this->messages->countUnread(),
-            ]);
+        if ('inbox' === $item->getName()) {
+            $item->setExtra('badge', $this->messages->countUnread());
+        }
     }
 }
 ```
@@ -271,7 +284,9 @@ In Twig, read the badge via `item.badge`:
 
 ## Factory Extensions
 
-Implement `ExtensionInterface` to enrich item options before the `Item` is created. Extensions are auto-tagged and sorted by `priority` (higher runs first; `CoreExtension` runs last at `-10`):
+### Build-time extensions (cached)
+
+Implement `ExtensionInterface` to enrich item options before the `Item` is created. Results are cached with the tree. Extensions are auto-tagged and sorted by `priority` (higher runs first; `CoreExtension` runs last at `-10`):
 
 ```php
 use ChamberOrchestra\MenuBundle\Factory\Extension\ExtensionInterface;
@@ -288,9 +303,30 @@ final class IconExtension implements ExtensionInterface
 }
 ```
 
+### Runtime extensions (post-cache)
+
+Implement `RuntimeExtensionInterface` to apply fresh data after every cache fetch. `processItem()` is called on every `Item` in the tree:
+
+```php
+use ChamberOrchestra\MenuBundle\Factory\Extension\RuntimeExtensionInterface;
+use ChamberOrchestra\MenuBundle\Menu\Item;
+
+final class NotificationBadgeExtension implements RuntimeExtensionInterface
+{
+    public function __construct(private readonly NotificationRepository $notifications) {}
+
+    public function processItem(Item $item): void
+    {
+        if ('alerts' === $item->getName()) {
+            $item->setExtra('badge', $this->notifications->countUnread());
+        }
+    }
+}
+```
+
 ---
 
-## DI Auto-configuration
+## DI Autoconfiguration
 
 Implement an interface and you're done — no manual service tags required:
 
@@ -298,6 +334,7 @@ Implement an interface and you're done — no manual service tags required:
 |---|---|
 | `NavigationInterface` | `chamber_orchestra_menu.navigation` |
 | `ExtensionInterface` | `chamber_orchestra_menu.factory.extension` |
+| `RuntimeExtensionInterface` | `chamber_orchestra_menu.factory.runtime_extension` |
 
 ---
 
