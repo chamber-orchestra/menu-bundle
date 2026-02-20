@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Matcher;
 
 use ChamberOrchestra\MenuBundle\Matcher\Matcher;
-use ChamberOrchestra\MenuBundle\Matcher\Voter\VoterInterface;
+use ChamberOrchestra\MenuBundle\Matcher\Voter\RouteVoter;
 use ChamberOrchestra\MenuBundle\Menu\Item;
-use ChamberOrchestra\MenuBundle\Menu\ItemInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -54,7 +53,7 @@ final class MatcherTest extends TestCase
     public function isCurrentStopsAtFirstDecisiveVoter(): void
     {
         $decisive = $this->makeVoter(true);
-        $neverCalled = $this->createMock(VoterInterface::class);
+        $neverCalled = $this->createMock(RouteVoter::class);
         $neverCalled->expects(self::never())->method('matchItem');
 
         $this->matcher->addVoters([$decisive, $neverCalled]);
@@ -64,7 +63,7 @@ final class MatcherTest extends TestCase
     #[Test]
     public function isCurrentCachesResultAndCallsVoterOnlyOnce(): void
     {
-        $voter = $this->createMock(VoterInterface::class);
+        $voter = $this->createMock(RouteVoter::class);
         $voter->expects(self::once())->method('matchItem')->willReturn(true);
         $this->matcher->addVoters([$voter]);
 
@@ -76,7 +75,7 @@ final class MatcherTest extends TestCase
     #[Test]
     public function clearInvalidatesCacheAndReVotes(): void
     {
-        $voter = $this->createMock(VoterInterface::class);
+        $voter = $this->createMock(RouteVoter::class);
         $voter->expects(self::exactly(2))->method('matchItem')->willReturn(false);
         $this->matcher->addVoters([$voter]);
 
@@ -104,9 +103,9 @@ final class MatcherTest extends TestCase
         $parent = new Item('parent');
         $parent->add($child);
 
-        $voter = $this->createStub(VoterInterface::class);
+        $voter = $this->createStub(RouteVoter::class);
         $voter->method('matchItem')
-            ->willReturnCallback(static fn(ItemInterface $item) => $item === $child ? true : null);
+            ->willReturnCallback(static fn (Item $item) => $item === $child ? true : null);
         $this->matcher->addVoters([$voter]);
 
         self::assertTrue($this->matcher->isAncestor($parent));
@@ -132,9 +131,9 @@ final class MatcherTest extends TestCase
         $parent = new Item('parent');
         $parent->add($child);
 
-        $voter = $this->createStub(VoterInterface::class);
+        $voter = $this->createStub(RouteVoter::class);
         $voter->method('matchItem')
-            ->willReturnCallback(static fn(ItemInterface $item) => $item === $grandchild ? true : null);
+            ->willReturnCallback(static fn (Item $item) => $item === $grandchild ? true : null);
         $this->matcher->addVoters([$voter]);
 
         self::assertFalse($this->matcher->isAncestor($parent, depth: 1));
@@ -151,17 +150,17 @@ final class MatcherTest extends TestCase
         $parent = new Item('parent');
         $parent->add($child);
 
-        $voter = $this->createStub(VoterInterface::class);
+        $voter = $this->createStub(RouteVoter::class);
         $voter->method('matchItem')
-            ->willReturnCallback(static fn(ItemInterface $item) => $item === $grandchild ? true : null);
+            ->willReturnCallback(static fn (Item $item) => $item === $grandchild ? true : null);
         $this->matcher->addVoters([$voter]);
 
         self::assertTrue($this->matcher->isAncestor($parent));
     }
 
-    private function makeVoter(?bool $result): VoterInterface
+    private function makeVoter(?bool $result): RouteVoter
     {
-        $voter = $this->createStub(VoterInterface::class);
+        $voter = $this->createStub(RouteVoter::class);
         $voter->method('matchItem')->willReturn($result);
 
         return $voter;

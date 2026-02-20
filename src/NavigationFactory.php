@@ -1,0 +1,95 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ChamberOrchestra\MenuBundle;
+
+use ChamberOrchestra\MenuBundle\Factory\Factory;
+use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
+use ChamberOrchestra\MenuBundle\Navigation\NavigationInterface;
+use ChamberOrchestra\MenuBundle\Registry\NavigationRegistry;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Adapter\TagAwareAdapter;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+
+class NavigationFactory
+{
+    /** @var array<string, Menu\Item> */
+    private array $built = [];
+    /** @var array<string, mixed> */
+    private array $options = [
+        'namespace' => '$NAVIGATION$',
+    ];
+    private readonly CacheInterface $cache;
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    public function __construct(
+        private readonly NavigationRegistry $registry,
+        private readonly Factory $factory,
+        ?CacheInterface $cache = null,
+        array $options = []
+    ) {
+        $this->cache = $cache ?? new TagAwareAdapter(new ArrayAdapter());
+        $this->options = \array_replace($this->options, $options);
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     *
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
+    public function create(NavigationInterface|string $nav, array $options): Menu\Item
+    {
+        if (\is_string($nav)) {
+            $nav = $this->registry->get($nav);
+        }
+
+        $key = $nav::class;
+
+        if (isset($this->built[$key])) {
+            return $this->built[$key];
+        }
+
+        $cached = $this->cache->get(
+            $this->createCacheKey($nav),
+            function (ItemInterface $item) use ($nav, $options): Menu\Item {
+                $nav->configureCacheItem($item);
+
+                $builder = $this->createNewBuilder();
+                $nav->build($builder, $options);
+
+                return $builder->build();
+            },
+            $nav->getCacheBeta(),
+        );
+
+        return $this->built[$key] = $cached;
+    }
+
+    private function createNewBuilder(): MenuBuilder
+    {
+        return new MenuBuilder($this->factory);
+    }
+
+    private function createCacheKey(NavigationInterface $nav): string
+    {
+        /** @var string $namespace */
+        $namespace = $this->options['namespace'];
+
+        return $this->sanitizeCacheKeyPart($namespace)
+               .$this->sanitizeCacheKeyPart($nav::class)
+               .$this->sanitizeCacheKeyPart($nav->getCacheKey());
+    }
+
+    private function sanitizeCacheKeyPart(string $cacheKeyPart): string
+    {
+        return \str_replace(
+            ['.', '\\', '/', '{', '}', '(', ')', '@', ':', ' ', '$'],
+            ['_', '.', '.', '-', '-', '-', '-', '-', '-', '-', '-'],
+            $cacheKeyPart,
+        );
+    }
+}

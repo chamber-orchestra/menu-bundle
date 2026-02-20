@@ -2,9 +2,9 @@ name: PHP Composer
 
 on:
   push:
-    branches: ["main", "8.0"]
+    branches: ["main"]
   pull_request:
-    branches: ["main", "8.0"]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -21,7 +21,6 @@ jobs:
         with:
           php-version: "8.5"
           tools: composer:v2
-          extensions: ds
           coverage: none
 
       - name: Validate composer.json and composer.lock
@@ -42,6 +41,9 @@ jobs:
 
       - name: Run test suite
         run: composer run-script test
+
+      - name: Run PHPStan
+        run: composer run-script analyse
 
       - name: Run PHP-CS-Fixer
         run: composer run-script cs-check

@@ -7,8 +7,8 @@ namespace Tests\Integrational;
 use ChamberOrchestra\MenuBundle\Factory\Extension\CoreExtension;
 use ChamberOrchestra\MenuBundle\Factory\Extension\LabelExtension;
 use ChamberOrchestra\MenuBundle\Factory\Factory;
-use ChamberOrchestra\MenuBundle\Menu\MenuBuilderInterface;
-use ChamberOrchestra\MenuBundle\Navigation\AbstractNavigation;
+use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
+use ChamberOrchestra\MenuBundle\Navigation\AbstractCachedNavigation;
 use ChamberOrchestra\MenuBundle\NavigationFactory;
 use ChamberOrchestra\MenuBundle\Registry\NavigationRegistry;
 use PHPUnit\Framework\Attributes\Test;
@@ -39,8 +39,8 @@ final class NavigationBuildTest extends TestCase
     #[Test]
     public function buildsSimpleFlatNavigation(): void
     {
-        $nav = new class extends AbstractNavigation {
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+        $nav = new class extends AbstractCachedNavigation {
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 $builder
                     ->add('home', ['label' => 'Home', 'uri' => '/'])
@@ -61,8 +61,8 @@ final class NavigationBuildTest extends TestCase
     #[Test]
     public function buildsNestedNavigation(): void
     {
-        $nav = new class extends AbstractNavigation {
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+        $nav = new class extends AbstractCachedNavigation {
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 $builder
                     ->add('products', ['label' => 'Products'])
@@ -88,8 +88,8 @@ final class NavigationBuildTest extends TestCase
     #[Test]
     public function buildsSectionItems(): void
     {
-        $nav = new class extends AbstractNavigation {
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+        $nav = new class extends AbstractCachedNavigation {
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 $builder
                     ->add('main', ['label' => 'Main'], section: true)
@@ -110,8 +110,8 @@ final class NavigationBuildTest extends TestCase
     #[Test]
     public function buildsItemsWithRoleRestrictions(): void
     {
-        $nav = new class extends AbstractNavigation {
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+        $nav = new class extends AbstractCachedNavigation {
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 $builder
                     ->add('dashboard', ['roles' => ['ROLE_USER']])
@@ -126,12 +126,12 @@ final class NavigationBuildTest extends TestCase
     }
 
     #[Test]
-    public function nonCachedNavigationIsBuiltOnEachCall(): void
+    public function navigationIsDedupedWithinSameFactoryInstance(): void
     {
-        $nav = new class extends AbstractNavigation {
+        $nav = new class extends AbstractCachedNavigation {
             public int $buildCount = 0;
 
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 ++$this->buildCount;
                 $builder->add('item');
@@ -141,14 +141,14 @@ final class NavigationBuildTest extends TestCase
         $this->navigationFactory->create($nav, []);
         $this->navigationFactory->create($nav, []);
 
-        self::assertSame(2, $nav->buildCount);
+        self::assertSame(1, $nav->buildCount);
     }
 
     #[Test]
     public function itemTreeSurvivesSerializationRoundTrip(): void
     {
-        $nav = new class extends AbstractNavigation {
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+        $nav = new class extends AbstractCachedNavigation {
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 $builder
                     ->add('parent', ['label' => 'Parent'], section: true)
@@ -159,7 +159,7 @@ final class NavigationBuildTest extends TestCase
         };
 
         $root = $this->navigationFactory->create($nav, []);
-        /** @var \ChamberOrchestra\MenuBundle\Menu\ItemInterface $restored */
+        /** @var \ChamberOrchestra\MenuBundle\Menu\Item $restored */
         $restored = \unserialize(\serialize($root));
 
         $parent = $restored->getFirstChild();
@@ -172,8 +172,8 @@ final class NavigationBuildTest extends TestCase
     #[Test]
     public function labelExtensionFallsBackToKeyWhenLabelMissing(): void
     {
-        $nav = new class extends AbstractNavigation {
-            public function build(MenuBuilderInterface $builder, array $options = []): void
+        $nav = new class extends AbstractCachedNavigation {
+            public function build(MenuBuilder $builder, array $options = []): void
             {
                 $builder->add('dashboard'); // no label option
             }
