@@ -13,7 +13,6 @@ use ChamberOrchestra\MenuBundle\NavigationFactory;
 use ChamberOrchestra\MenuBundle\Registry\NavigationRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Tests the full pipeline: Navigation → MenuBuilder → Item tree, using real classes.
@@ -25,11 +24,8 @@ final class NavigationBuildTest extends TestCase
 
     protected function setUp(): void
     {
-        $translator = $this->createStub(TranslatorInterface::class);
-        $translator->method('trans')->willReturnArgument(0); // identity translator
-
         $this->factory = new Factory();
-        $this->factory->addExtension(new LabelExtension($translator), priority: 10);
+        $this->factory->addExtension(new LabelExtension(), priority: 10);
         $this->factory->addExtension(new CoreExtension(), priority: -10);
 
         $registry = $this->createStub(NavigationRegistry::class);

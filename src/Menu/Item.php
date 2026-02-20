@@ -121,6 +121,16 @@ class Item implements \Countable, \IteratorAggregate
         return $this->section;
     }
 
+    public function setExtra(string $key, mixed $value): self
+    {
+        /** @var array<string, mixed> $extras */
+        $extras = $this->options['extras'] ?? [];
+        $extras[$key] = $value;
+        $this->options['extras'] = $extras;
+
+        return $this;
+    }
+
     public function getBadge(): ?int
     {
         /** @var array<string, mixed> $extras */

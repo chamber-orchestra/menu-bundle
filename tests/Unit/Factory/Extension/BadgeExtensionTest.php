@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Factory\Extension;
 
 use ChamberOrchestra\MenuBundle\Factory\Extension\BadgeExtension;
+use ChamberOrchestra\MenuBundle\Menu\Item;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -18,56 +19,60 @@ final class BadgeExtensionTest extends TestCase
     }
 
     #[Test]
-    public function returnsOptionsUnchangedWhenBadgeMissing(): void
+    public function skipsItemWithoutBadgeOption(): void
     {
-        $options = ['label' => 'Scores'];
+        $item = new Item('scores', ['label' => 'Scores']);
+        $this->ext->processItem($item);
 
-        self::assertSame($options, $this->ext->buildOptions($options));
+        self::assertNull($item->getBadge());
     }
 
     #[Test]
     public function intBadgeIsMovedToExtras(): void
     {
-        $result = $this->ext->buildOptions(['badge' => 5]);
+        $item = new Item('scores', ['badge' => 5]);
+        $this->ext->processItem($item);
 
-        self::assertArrayNotHasKey('badge', $result);
-        self::assertSame(5, $result['extras']['badge']);
+        self::assertSame(5, $item->getBadge());
     }
 
     #[Test]
     public function closureBadgeIsResolvedAndMovedToExtras(): void
     {
-        $result = $this->ext->buildOptions(['badge' => static fn (): int => 42]);
+        $item = new Item('scores', ['badge' => static fn (): int => 42]);
+        $this->ext->processItem($item);
 
-        self::assertArrayNotHasKey('badge', $result);
-        self::assertSame(42, $result['extras']['badge']);
+        self::assertSame(42, $item->getBadge());
     }
 
     #[Test]
     public function zeroBadgeIsPreserved(): void
     {
-        $result = $this->ext->buildOptions(['badge' => 0]);
+        $item = new Item('scores', ['badge' => 0]);
+        $this->ext->processItem($item);
 
-        self::assertSame(0, $result['extras']['badge']);
+        self::assertSame(0, $item->getBadge());
     }
 
     #[Test]
     public function closureReturningZeroIsPreserved(): void
     {
-        $result = $this->ext->buildOptions(['badge' => static fn (): int => 0]);
+        $item = new Item('scores', ['badge' => static fn (): int => 0]);
+        $this->ext->processItem($item);
 
-        self::assertSame(0, $result['extras']['badge']);
+        self::assertSame(0, $item->getBadge());
     }
 
     #[Test]
     public function existingExtrasArePreserved(): void
     {
-        $result = $this->ext->buildOptions([
+        $item = new Item('scores', [
             'extras' => ['icon' => 'rehearsal'],
             'badge' => 3,
         ]);
+        $this->ext->processItem($item);
 
-        self::assertSame('rehearsal', $result['extras']['icon']);
-        self::assertSame(3, $result['extras']['badge']);
+        self::assertSame('rehearsal', $item->getOption('extras')['icon']);
+        self::assertSame(3, $item->getBadge());
     }
 }

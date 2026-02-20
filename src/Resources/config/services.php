@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
-use ChamberOrchestra\MenuBundle\Factory\Extension\BadgeExtension;
-use ChamberOrchestra\MenuBundle\Factory\Extension\CoreExtension;
 use ChamberOrchestra\MenuBundle\Factory\Extension\ExtensionInterface;
+use ChamberOrchestra\MenuBundle\Factory\Extension\RuntimeExtensionInterface;
 use ChamberOrchestra\MenuBundle\Factory\Factory;
 use ChamberOrchestra\MenuBundle\Matcher\Matcher;
 use ChamberOrchestra\MenuBundle\Navigation\NavigationInterface;
+use ChamberOrchestra\MenuBundle\NavigationFactory;
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()
@@ -21,6 +21,9 @@ return static function (ContainerConfigurator $container): void {
         ->instanceof(ExtensionInterface::class)
             ->tag('chamber_orchestra_menu.factory.extension')
 
+        ->instanceof(RuntimeExtensionInterface::class)
+            ->tag('chamber_orchestra_menu.factory.runtime_extension')
+
         ->instanceof(NavigationInterface::class)
             ->tag('chamber_orchestra_menu.navigation')
     ;
@@ -31,10 +34,8 @@ return static function (ContainerConfigurator $container): void {
     $services->set(Factory::class)
         ->call('addExtensions', [\tagged_iterator('chamber_orchestra_menu.factory.extension')]);
 
-    $services->set(BadgeExtension::class);
-
-    $services->set(CoreExtension::class)
-        ->tag('chamber_orchestra_menu.factory.extension', ['priority' => -10]);
+    $services->set(NavigationFactory::class)
+        ->call('addRuntimeExtensions', [\tagged_iterator('chamber_orchestra_menu.factory.runtime_extension')]);
 
     $services->set(Matcher::class)
         ->call('addVoters', [\tagged_iterator('chamber_orchestra_menu.matcher.voter')]);

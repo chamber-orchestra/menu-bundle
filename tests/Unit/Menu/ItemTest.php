@@ -166,6 +166,35 @@ final class ItemTest extends TestCase
     }
 
     #[Test]
+    public function setExtraAddsToExtras(): void
+    {
+        $item = new Item('scores');
+        $result = $item->setExtra('badge', 7);
+
+        self::assertSame($item, $result);
+        self::assertSame(7, $item->getBadge());
+    }
+
+    #[Test]
+    public function setExtraPreservesExistingExtras(): void
+    {
+        $item = new Item('scores', ['extras' => ['icon' => 'rehearsal']]);
+        $item->setExtra('badge', 3);
+
+        self::assertSame('rehearsal', $item->getOption('extras')['icon']);
+        self::assertSame(3, $item->getBadge());
+    }
+
+    #[Test]
+    public function setExtraOverwritesExistingKey(): void
+    {
+        $item = new Item('scores', ['extras' => ['badge' => 1]]);
+        $item->setExtra('badge', 99);
+
+        self::assertSame(99, $item->getBadge());
+    }
+
+    #[Test]
     public function serializationRoundTripPreservesAllFields(): void
     {
         $original = new Item('root', ['label' => 'Root', 'roles' => ['ROLE_ADMIN']], true);
