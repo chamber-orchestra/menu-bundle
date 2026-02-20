@@ -111,6 +111,21 @@ Services are autowired and autoconfigured via `src/Resources/config/services.php
 
 ## Code Style
 
+- Every PHP file must include the license header between `declare(strict_types=1);` and `namespace`:
+  ```php
+  <?php
+
+  declare(strict_types=1);
+
+  /*
+   * This file is part of the ChamberOrchestra package.
+   *
+   * For the full copyright and license information, please view the LICENSE
+   * file that was distributed with this source code.
+   */
+
+  namespace ...;
+  ```
 - PHP 8.5+ with strict types (`declare(strict_types=1);`)
 - PSR-4 autoloading: `ChamberOrchestra\MenuBundle\` → `src/`
 - `@PER-CS` + `@Symfony` PHP-CS-Fixer rulesets
