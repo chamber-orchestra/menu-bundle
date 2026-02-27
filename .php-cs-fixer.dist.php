@@ -25,7 +25,7 @@ return (new PhpCsFixer\Config())
             'import_functions' => false,
         ],
         'native_function_invocation' => [
-            'include' => ['@all'],
+            'include' => ['@internal'],
             'scope' => 'all',
             'strict' => true,
         ],
