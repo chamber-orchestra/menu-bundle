@@ -39,11 +39,11 @@ return static function (ContainerConfigurator $container): void {
         ->exclude('../../{DependencyInjection,Resources,Exception,Navigation}');
 
     $services->set(Factory::class)
-        ->call('addExtensions', [\tagged_iterator('chamber_orchestra_menu.factory.extension')]);
+        ->call('addExtensions', [tagged_iterator('chamber_orchestra_menu.factory.extension')]);
 
     $services->set(NavigationFactory::class)
-        ->call('addRuntimeExtensions', [\tagged_iterator('chamber_orchestra_menu.factory.runtime_extension')]);
+        ->call('addRuntimeExtensions', [tagged_iterator('chamber_orchestra_menu.factory.runtime_extension')]);
 
     $services->set(Matcher::class)
-        ->call('addVoters', [\tagged_iterator('chamber_orchestra_menu.matcher.voter')]);
+        ->call('addVoters', [tagged_iterator('chamber_orchestra_menu.matcher.voter')]);
 };
