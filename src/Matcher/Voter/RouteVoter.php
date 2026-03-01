@@ -16,7 +16,7 @@ use ChamberOrchestra\MenuBundle\Menu\Item;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-class RouteVoter
+class RouteVoter implements VoterInterface
 {
     private ?Request $lastRequest = null;
     private ?string $lastRoute = null;

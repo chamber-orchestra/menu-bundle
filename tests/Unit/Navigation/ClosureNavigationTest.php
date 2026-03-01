@@ -15,6 +15,7 @@ use ChamberOrchestra\MenuBundle\Menu\MenuBuilder;
 use ChamberOrchestra\MenuBundle\Navigation\ClosureNavigation;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Contracts\Cache\ItemInterface;
 
 final class ClosureNavigationTest extends TestCase
 {
@@ -26,7 +27,7 @@ final class ClosureNavigationTest extends TestCase
         $receivedOptions = null;
 
         $nav = new ClosureNavigation(
-            function (MenuBuilder $builder, array $options) use (&$called, &$receivedBuilder, &$receivedOptions): void {
+            static function (MenuBuilder $builder, array $options) use (&$called, &$receivedBuilder, &$receivedOptions): void {
                 $called = true;
                 $receivedBuilder = $builder;
                 $receivedOptions = $options;
@@ -46,7 +47,7 @@ final class ClosureNavigationTest extends TestCase
     {
         $received = null;
         $nav = new ClosureNavigation(
-            function (MenuBuilder $b, array $options) use (&$received): void {
+            static function (MenuBuilder $b, array $options) use (&$received): void {
                 $received = $options;
             }
         );
@@ -54,5 +55,41 @@ final class ClosureNavigationTest extends TestCase
         $nav->build($this->createStub(MenuBuilder::class));
 
         self::assertSame([], $received);
+    }
+
+    #[Test]
+    public function cacheKeyDefaultsToClassName(): void
+    {
+        $nav = new ClosureNavigation(static function (): void {});
+
+        self::assertSame(ClosureNavigation::class, $nav->getCacheKey());
+    }
+
+    #[Test]
+    public function cacheKeyUsesCustomValue(): void
+    {
+        $nav = new ClosureNavigation(static function (): void {}, cacheKey: 'sidebar_nav');
+
+        self::assertSame('sidebar_nav', $nav->getCacheKey());
+    }
+
+    #[Test]
+    public function ttlDefaultsToZero(): void
+    {
+        $nav = new ClosureNavigation(static function (): void {});
+        $cacheItem = $this->createMock(ItemInterface::class);
+        $cacheItem->expects(self::once())->method('expiresAfter')->with(0);
+
+        $nav->configureCacheItem($cacheItem);
+    }
+
+    #[Test]
+    public function ttlUsesCustomValue(): void
+    {
+        $nav = new ClosureNavigation(static function (): void {}, cacheKey: 'scores', ttl: 3600);
+        $cacheItem = $this->createMock(ItemInterface::class);
+        $cacheItem->expects(self::once())->method('expiresAfter')->with(3600);
+
+        $nav->configureCacheItem($cacheItem);
     }
 }

@@ -16,8 +16,11 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class ClosureNavigation implements NavigationInterface
 {
-    public function __construct(private readonly \Closure $callback)
-    {
+    public function __construct(
+        private readonly \Closure $callback,
+        private readonly ?string $cacheKey = null,
+        private readonly int $ttl = 0,
+    ) {
     }
 
     /**
@@ -30,12 +33,12 @@ class ClosureNavigation implements NavigationInterface
 
     public function getCacheKey(): string
     {
-        return static::class;
+        return $this->cacheKey ?? static::class;
     }
 
     public function configureCacheItem(ItemInterface $item): void
     {
-        $item->expiresAfter(0);
+        $item->expiresAfter($this->ttl);
     }
 
     public function getCacheBeta(): ?float

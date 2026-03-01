@@ -21,55 +21,74 @@ final class ItemTest extends TestCase
     #[Test]
     public function getName(): void
     {
-        self::assertSame('home', (new Item('home'))->getName());
+        self::assertSame('home', new Item('home')->getName());
     }
 
     #[Test]
     public function getLabelDefaultsToEmpty(): void
     {
-        self::assertSame('', (new Item('home'))->getLabel());
+        self::assertSame('', new Item('home')->getLabel());
     }
 
     #[Test]
     public function getLabel(): void
     {
-        self::assertSame('Home', (new Item('home', ['label' => 'Home']))->getLabel());
+        self::assertSame('Home', new Item('home', ['label' => 'Home'])->getLabel());
+    }
+
+    #[Test]
+    public function setLabelUpdatesLabel(): void
+    {
+        $item = new Item('home', ['label' => 'Home']);
+        $result = $item->setLabel('Dashboard');
+
+        self::assertSame($item, $result);
+        self::assertSame('Dashboard', $item->getLabel());
+    }
+
+    #[Test]
+    public function setLabelSetsLabelWhenNoneExists(): void
+    {
+        $item = new Item('home');
+        $item->setLabel('Homepage');
+
+        self::assertSame('Homepage', $item->getLabel());
     }
 
     #[Test]
     public function getUriDefaultsToNull(): void
     {
-        self::assertNull((new Item('home'))->getUri());
+        self::assertNull(new Item('home')->getUri());
     }
 
     #[Test]
     public function getUri(): void
     {
-        self::assertSame('/home', (new Item('home', ['uri' => '/home']))->getUri());
+        self::assertSame('/home', new Item('home', ['uri' => '/home'])->getUri());
     }
 
     #[Test]
     public function getRolesDefaultsToEmpty(): void
     {
-        self::assertSame([], (new Item('home'))->getRoles());
+        self::assertSame([], new Item('home')->getRoles());
     }
 
     #[Test]
     public function getRoles(): void
     {
-        self::assertSame(['ROLE_ADMIN'], (new Item('home', ['roles' => ['ROLE_ADMIN']]))->getRoles());
+        self::assertSame(['ROLE_ADMIN'], new Item('home', ['roles' => ['ROLE_ADMIN']])->getRoles());
     }
 
     #[Test]
     public function getOptionReturnsFallbackForMissingKey(): void
     {
-        self::assertSame('default', (new Item('home'))->getOption('missing', 'default'));
+        self::assertSame('default', new Item('home')->getOption('missing', 'default'));
     }
 
     #[Test]
     public function getOptionReturnsFallbackWhenKeyMissingAndDefaultIsNull(): void
     {
-        self::assertNull((new Item('home'))->getOption('missing'));
+        self::assertNull(new Item('home')->getOption('missing'));
     }
 
     #[Test]
@@ -83,13 +102,13 @@ final class ItemTest extends TestCase
     #[Test]
     public function isSectionFalseByDefault(): void
     {
-        self::assertFalse((new Item('home'))->isSection());
+        self::assertFalse(new Item('home')->isSection());
     }
 
     #[Test]
     public function isSection(): void
     {
-        self::assertTrue((new Item('section', [], true))->isSection());
+        self::assertTrue(new Item('section', [], true)->isSection());
     }
 
     #[Test]
@@ -132,13 +151,13 @@ final class ItemTest extends TestCase
     #[Test]
     public function getFirstChildReturnsNullForEmpty(): void
     {
-        self::assertNull((new Item('root'))->getFirstChild());
+        self::assertNull(new Item('root')->getFirstChild());
     }
 
     #[Test]
     public function getLastChildReturnsNullForEmpty(): void
     {
-        self::assertNull((new Item('root'))->getLastChild());
+        self::assertNull(new Item('root')->getLastChild());
     }
 
     #[Test]
@@ -154,7 +173,7 @@ final class ItemTest extends TestCase
     #[Test]
     public function getChildrenReturnsDoctrineCollection(): void
     {
-        self::assertInstanceOf(Collection::class, (new Item('root'))->getChildren());
+        self::assertInstanceOf(Collection::class, new Item('root')->getChildren());
     }
 
     #[Test]

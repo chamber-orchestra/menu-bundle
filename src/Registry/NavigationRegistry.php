@@ -22,8 +22,9 @@ class NavigationRegistry
      * @param ServiceLocator<NavigationInterface> $locator
      */
     public function __construct(
-        #[AutowireLocator('chamber_orchestra_menu.navigation')] private readonly ServiceLocator $locator)
-    {
+        #[AutowireLocator('chamber_orchestra_menu.navigation')]
+        private readonly ServiceLocator $locator
+    ) {
     }
 
     public function get(string $id): NavigationInterface

@@ -22,25 +22,25 @@ final class FactoryTest extends TestCase
     #[Test]
     public function createItemReturnsItemInstance(): void
     {
-        self::assertInstanceOf(Item::class, (new Factory())->createItem('home'));
+        self::assertInstanceOf(Item::class, new Factory()->createItem('home'));
     }
 
     #[Test]
     public function createItemSetsCorrectName(): void
     {
-        self::assertSame('home', (new Factory())->createItem('home')->getName());
+        self::assertSame('home', new Factory()->createItem('home')->getName());
     }
 
     #[Test]
     public function createItemInjectsKeyFromName(): void
     {
-        self::assertSame('home', (new Factory())->createItem('home')->getOption('key'));
+        self::assertSame('home', new Factory()->createItem('home')->getOption('key'));
     }
 
     #[Test]
     public function createItemPassesOptionsToItem(): void
     {
-        $item = (new Factory())->createItem('home', ['label' => 'Home', 'uri' => '/']);
+        $item = new Factory()->createItem('home', ['label' => 'Home', 'uri' => '/']);
 
         self::assertSame('Home', $item->getLabel());
         self::assertSame('/', $item->getUri());
@@ -49,7 +49,7 @@ final class FactoryTest extends TestCase
     #[Test]
     public function createItemWithSectionFlag(): void
     {
-        self::assertTrue((new Factory())->createItem('section', [], true)->isSection());
+        self::assertTrue(new Factory()->createItem('section', [], true)->isSection());
     }
 
     #[Test]

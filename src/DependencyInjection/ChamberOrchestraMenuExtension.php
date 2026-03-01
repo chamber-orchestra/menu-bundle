@@ -23,6 +23,14 @@ final class ChamberOrchestraMenuExtension extends Extension
      */
     public function load(array $configs, ContainerBuilder $container): void
     {
+        $configuration = new Configuration();
+        /** @var array{default_template: ?string, translation: array{domain: string}, cache: array{namespace: string}} $config */
+        $config = $this->processConfiguration($configuration, $configs);
+
+        $container->setParameter('chamber_orchestra_menu.default_template', $config['default_template']);
+        $container->setParameter('chamber_orchestra_menu.translation.domain', $config['translation']['domain']);
+        $container->setParameter('chamber_orchestra_menu.cache.namespace', $config['cache']['namespace']);
+
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.php');
     }
