@@ -53,6 +53,13 @@ class Item implements \Countable, \IteratorAggregate
         return $label;
     }
 
+    public function setLabel(string $label): self
+    {
+        $this->options['label'] = $label;
+
+        return $this;
+    }
+
     public function getUri(): ?string
     {
         $uri = $this->options['uri'] ?? null;

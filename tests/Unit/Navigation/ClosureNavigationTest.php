@@ -26,7 +26,7 @@ final class ClosureNavigationTest extends TestCase
         $receivedOptions = null;
 
         $nav = new ClosureNavigation(
-            function (MenuBuilder $builder, array $options) use (&$called, &$receivedBuilder, &$receivedOptions): void {
+            static function (MenuBuilder $builder, array $options) use (&$called, &$receivedBuilder, &$receivedOptions): void {
                 $called = true;
                 $receivedBuilder = $builder;
                 $receivedOptions = $options;
@@ -46,7 +46,7 @@ final class ClosureNavigationTest extends TestCase
     {
         $received = null;
         $nav = new ClosureNavigation(
-            function (MenuBuilder $b, array $options) use (&$received): void {
+            static function (MenuBuilder $b, array $options) use (&$received): void {
                 $received = $options;
             }
         );

@@ -47,7 +47,8 @@ class RoutingExtension implements ExtensionInterface
                     'route' => $route,
                     'route_params' => $params,
                 ],
-            ]);
+            ]
+        );
 
         return $options;
     }

@@ -20,6 +20,8 @@ class MenuExtension extends AbstractExtension
     {
         return [
             new TwigFunction('render_menu', [MenuRuntime::class, 'render'], ['is_safe' => ['html']]),
+            new TwigFunction('menu_get', [MenuRuntime::class, 'get']),
+            new TwigFunction('menu_breadcrumbs', [MenuRuntime::class, 'breadcrumbs']),
         ];
     }
 }

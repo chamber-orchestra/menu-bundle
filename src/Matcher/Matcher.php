@@ -11,14 +11,14 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\MenuBundle\Matcher;
 
-use ChamberOrchestra\MenuBundle\Matcher\Voter\RouteVoter;
+use ChamberOrchestra\MenuBundle\Matcher\Voter\VoterInterface;
 use ChamberOrchestra\MenuBundle\Menu\Item;
 
 class Matcher
 {
     /** @var \SplObjectStorage<Item, bool> */
     private \SplObjectStorage $cache;
-    /** @var iterable<RouteVoter> */
+    /** @var iterable<VoterInterface> */
     private iterable $voters = [];
 
     public function __construct()
@@ -27,7 +27,7 @@ class Matcher
     }
 
     /**
-     * @param iterable<RouteVoter> $voters
+     * @param iterable<VoterInterface> $voters
      */
     public function addVoters(iterable $voters): void
     {
