@@ -184,6 +184,7 @@ AbstractNavigation                     (base: 0 TTL, no tags)
 |---|---|---|---|
 | `AbstractCachedNavigation` | 24 h | `chamber_orchestra_menu` | Menu structures (recommended) |
 | `AbstractNavigation` | 0 | none | Base class, no caching across requests |
+| `ClosureNavigation` | 0 (configurable) | none | Quick one-off menus; optionally cacheable |
 
 All navigations are deduped within the same request via `NavigationFactory`. When a PSR-6 `CacheInterface` (tag-aware) is wired in, `AbstractCachedNavigation` stores the tree across requests. Without one, an in-memory `ArrayAdapter` is used automatically.
 
@@ -226,6 +227,30 @@ final class MainNavigation extends AbstractCachedNavigation
 ```
 
 The default cache key is the fully-qualified class name; default TTL is **24 hours**; default tag is `chamber_orchestra_menu`.
+
+### ClosureNavigation caching
+
+`ClosureNavigation` is uncached by default (TTL 0), but you can opt in to caching by providing a unique `cacheKey` and a `ttl`:
+
+```php
+use ChamberOrchestra\MenuBundle\Navigation\ClosureNavigation;
+
+// Uncached (default)
+$nav = new ClosureNavigation(function (MenuBuilder $builder): void {
+    $builder->add('home', ['label' => 'Home', 'route' => 'app_home']);
+});
+
+// Cached for 1 hour
+$nav = new ClosureNavigation(
+    callback: function (MenuBuilder $builder): void {
+        $builder->add('home', ['label' => 'Home', 'route' => 'app_home']);
+    },
+    cacheKey: 'sidebar_nav',
+    ttl: 3600,
+);
+```
+
+Each cached `ClosureNavigation` **must** have a unique `cacheKey` — without one, all instances share the same key and overwrite each other.
 
 The cache namespace prefix defaults to `$NAVIGATION$` and can be changed via bundle configuration.
 
