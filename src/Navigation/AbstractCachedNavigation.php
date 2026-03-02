@@ -32,6 +32,11 @@ abstract class AbstractCachedNavigation extends AbstractNavigation
         $this->cache = \array_replace($this->cache, $cacheOptions);
     }
 
+    public function isCacheable(): bool
+    {
+        return true;
+    }
+
     public function configureCacheItem(ItemInterface $item): void
     {
         /** @var int $lifetime */
