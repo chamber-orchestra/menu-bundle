@@ -135,6 +135,14 @@ class Item implements \Countable, \IteratorAggregate
         return $this->section;
     }
 
+    public function getExtra(string $key, mixed $default = null): mixed
+    {
+        /** @var array<string, mixed> $extras */
+        $extras = $this->options['extras'] ?? [];
+
+        return \array_key_exists($key, $extras) ? $extras[$key] : $default;
+    }
+
     public function setExtra(string $key, mixed $value): self
     {
         /** @var array<string, mixed> $extras */

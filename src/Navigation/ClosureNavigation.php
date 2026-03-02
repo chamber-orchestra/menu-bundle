@@ -31,6 +31,11 @@ class ClosureNavigation implements NavigationInterface
         ($this->callback)($builder, $options);
     }
 
+    public function isCacheable(): bool
+    {
+        return null !== $this->cacheKey;
+    }
+
     public function getCacheKey(): string
     {
         return $this->cacheKey ?? static::class;

@@ -58,6 +58,15 @@ class NavigationFactory
             $nav = $this->registry->get($nav);
         }
 
+        if (!$nav->isCacheable()) {
+            $builder = $this->createNewBuilder();
+            $nav->build($builder, $options);
+            $built = $builder->build();
+            $this->applyRuntimeExtensions($built);
+
+            return $built;
+        }
+
         $key = $nav::class;
 
         if (isset($this->built[$key])) {
