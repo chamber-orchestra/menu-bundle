@@ -21,6 +21,11 @@ abstract class AbstractNavigation implements NavigationInterface
      */
     abstract public function build(MenuBuilder $builder, array $options = []): void;
 
+    public function isCacheable(): bool
+    {
+        return false;
+    }
+
     public function getCacheKey(): string
     {
         return static::class;

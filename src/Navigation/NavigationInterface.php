@@ -21,6 +21,8 @@ interface NavigationInterface
      */
     public function build(MenuBuilder $builder, array $options = []): void;
 
+    public function isCacheable(): bool;
+
     public function getCacheKey(): string;
 
     public function configureCacheItem(ItemInterface $item): void;

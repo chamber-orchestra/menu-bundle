@@ -21,8 +21,9 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\TagAwareAdapter;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
-class NavigationFactory
+class NavigationFactory implements ResetInterface
 {
     /** @var array<string, Item> */
     private array $built = [];
@@ -58,6 +59,15 @@ class NavigationFactory
             $nav = $this->registry->get($nav);
         }
 
+        if (!$nav->isCacheable()) {
+            $builder = $this->createNewBuilder();
+            $nav->build($builder, $options);
+            $built = $builder->build();
+            $this->applyRuntimeExtensions($built);
+
+            return $built;
+        }
+
         $key = $nav::class;
 
         if (isset($this->built[$key])) {
@@ -80,6 +90,11 @@ class NavigationFactory
         $this->applyRuntimeExtensions($cached);
 
         return $this->built[$key] = $cached;
+    }
+
+    public function reset(): void
+    {
+        $this->built = [];
     }
 
     /**
