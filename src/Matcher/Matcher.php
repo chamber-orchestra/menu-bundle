@@ -13,8 +13,9 @@ namespace ChamberOrchestra\MenuBundle\Matcher;
 
 use ChamberOrchestra\MenuBundle\Matcher\Voter\VoterInterface;
 use ChamberOrchestra\MenuBundle\Menu\Item;
+use Symfony\Contracts\Service\ResetInterface;
 
-class Matcher
+class Matcher implements ResetInterface
 {
     /** @var \SplObjectStorage<Item, bool> */
     private \SplObjectStorage $cache;
@@ -70,8 +71,13 @@ class Matcher
         return false;
     }
 
-    public function clear(): void
+    public function reset(): void
     {
         $this->cache->removeAll($this->cache);
+    }
+
+    public function clear(): void
+    {
+        $this->reset();
     }
 }
