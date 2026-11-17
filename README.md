@@ -6,7 +6,7 @@
 [![Latest Stable Version](https://img.shields.io/packagist/v/chamber-orchestra/menu-bundle.svg)](https://packagist.org/packages/chamber-orchestra/menu-bundle)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PHP 8.5+](https://img.shields.io/badge/PHP-8.5%2B-777BB4.svg)](https://www.php.net/)
-[![Symfony 8.0](https://img.shields.io/badge/Symfony-8.0-000000.svg)](https://symfony.com/)
+[![Symfony 8.2](https://img.shields.io/badge/Symfony-8.2-000000.svg)](https://symfony.com/)
 
 A **Symfony 8** bundle for building navigation menus, sidebars, and breadcrumbs — fluent tree builder, route-based active-item matching, role-based access control, runtime extensions for dynamic badges, PSR-6 tag-aware caching, and Twig rendering.
 

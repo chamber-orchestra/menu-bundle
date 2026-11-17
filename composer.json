@@ -61,12 +61,12 @@
         "ext-ds": "*",
         "doctrine/collections": "^2.6 || ^3.1",
         "symfony/cache-contracts": "^3.7",
-        "symfony/config": "8.1.*",
-        "symfony/dependency-injection": "8.1.*",
-        "symfony/http-foundation": "8.1.*",
-        "symfony/http-kernel": "8.1.*",
-        "symfony/routing": "8.1.*",
-        "symfony/security-core": "8.1.*",
+        "symfony/config": "8.2.*",
+        "symfony/dependency-injection": "8.2.*",
+        "symfony/http-foundation": "8.2.*",
+        "symfony/http-kernel": "8.2.*",
+        "symfony/routing": "8.2.*",
+        "symfony/security-core": "8.2.*",
         "symfony/translation-contracts": "^3.7",
         "twig/twig": "^3.29"
     },
@@ -74,7 +74,7 @@
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^13.3",
-        "symfony/cache": "8.1.*"
+        "symfony/cache": "8.2.*"
     },
     "autoload": {
         "psr-4": {
@@ -86,13 +86,13 @@
             "Tests\\": "tests/"
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "beta",
     "config": {
         "sort-packages": true
     },
     "extra": {
         "symfony": {
-            "require": "8.1.*"
+            "require": "8.2.*"
         }
     },
     "scripts": {
@@ -100,5 +100,6 @@
         "analyse": "vendor/bin/phpstan analyse",
         "cs-fix": "vendor/bin/php-cs-fixer fix",
         "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff"
-    }
+    },
+    "prefer-stable": true
 }

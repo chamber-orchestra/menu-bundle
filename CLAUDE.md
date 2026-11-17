@@ -138,7 +138,7 @@ Services are autowired and autoconfigured via `src/Resources/config/services.php
 
 ## Dependencies
 
-- Requires PHP 8.5, `ext-ds`, Symfony 8.0 components (`config`, `dependency-injection`, `http-foundation`, `http-kernel`, `routing`, `security-core`), `symfony/cache-contracts`, `doctrine/collections`, `twig/twig`
+- Requires PHP 8.5, `ext-ds`, Symfony 8.2 components (`config`, `dependency-injection`, `http-foundation`, `http-kernel`, `routing`, `security-core`), `symfony/cache-contracts`, `doctrine/collections`, `twig/twig`
 - Dev: PHPUnit 13, PHPStan, `php-cs-fixer`, `symfony/cache`
 - Main branch is `main`
 
